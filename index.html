@@ -1,350 +1,333 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>monorepo – Explorer</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
-    background: #1a1a1a;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    background: #1e1e1e;
+    color: #cccccc;
     display: flex;
     align-items: flex-start;
     justify-content: center;
     min-height: 100vh;
-    padding: 24px;
   }
 
-  .finder-window {
-    width: 920px;
-    background: #2b2b2b;
-    border-radius: 12px;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 0 0.5px rgba(255,255,255,0.08);
-    overflow: hidden;
-    font-size: 13px;
+  .vscode-window {
+    width: 100%;
+    max-width: 600px;
+    min-height: 100vh;
+    background: #1e1e1e;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 60px rgba(0,0,0,0.8);
   }
 
+  /* Title bar */
   .title-bar {
-    background: linear-gradient(180deg, #3d3d3d 0%, #333 100%);
-    height: 38px;
+    height: 30px;
+    background: #323233;
     display: flex;
     align-items: center;
     padding: 0 12px;
     gap: 8px;
-    border-bottom: 1px solid #1a1a1a;
+    flex-shrink: 0;
+    border-bottom: 1px solid #111;
     position: relative;
-    flex-shrink: 0;
   }
-  .traffic-light { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
-  .tl-close { background: #ff5f57; }
-  .tl-min   { background: #ffbd2e; }
-  .tl-max   { background: #28c840; }
-  .title-text {
+  .win-btn { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+  .win-close { background: #ff5f57; }
+  .win-min   { background: #febc2e; }
+  .win-max   { background: #28c840; }
+  .title-bar-text {
     position: absolute; left: 50%; transform: translateX(-50%);
-    color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 500;
+    font-size: 12px; color: #9d9d9d;
   }
 
-  .toolbar {
-    background: #2e2e2e;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    padding: 0 12px;
-    gap: 6px;
-    border-bottom: 1px solid #1a1a1a;
-    flex-shrink: 0;
-  }
-  .toolbar-btn {
-    background: rgba(255,255,255,0.07);
-    border: 0.5px solid rgba(255,255,255,0.1);
-    border-radius: 5px;
-    color: rgba(255,255,255,0.6);
-    font-size: 11px;
-    padding: 3px 10px;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.1s;
-  }
-  .toolbar-btn:hover { background: rgba(255,255,255,0.13); }
+  .layout { display: flex; flex: 1; }
 
-  .finder-body { display: flex; min-height: 400px; }
-
+  /* Sidebar */
   .sidebar {
-    width: 170px;
-    background: #252525;
-    border-right: 1px solid #1a1a1a;
-    padding: 8px 0;
+    flex: 1;
+    background: #252526;
+    display: flex;
+    flex-direction: column;
+    border-right: none;
+  }
+  .sidebar-title {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: #bbbbbb;
+    padding: 14px 16px 4px;
     flex-shrink: 0;
   }
-  .sidebar-section-label {
-    color: rgba(255,255,255,0.35);
-    font-size: 10.5px; font-weight: 600;
-    letter-spacing: 0.4px; text-transform: uppercase;
-    padding: 6px 12px 2px;
+  .explorer-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 3px 6px 3px 12px;
+    flex-shrink: 0;
   }
-  .sidebar-item {
-    display: flex; align-items: center; gap: 7px;
-    padding: 4px 10px 4px 14px;
-    color: rgba(255,255,255,0.75);
-    font-size: 12.5px; cursor: default;
-    border-radius: 5px; margin: 0 5px;
+  .explorer-header-label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    color: #cccccc;
   }
-  .sidebar-item.active { background: rgba(58,130,246,0.35); color: white; }
-  .sidebar-icon { font-size: 14px; }
-
-  .content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px 10px;
-    background: #2b2b2b;
-  }
-  .content::-webkit-scrollbar { width: 6px; }
-  .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
-
-  /* Tree nodes */
-  .node { }
-
-  .node-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 6px;
-    border-radius: 5px;
-    cursor: pointer;
+  .explorer-header-actions { display: flex; gap: 2px; }
+  .header-btn {
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 3px; color: #858585; font-size: 14px; cursor: pointer;
     user-select: none;
-    white-space: nowrap;
-    overflow: hidden;
   }
-  .node-row:hover { background: rgba(255,255,255,0.07); }
-  .node-row.selected { background: rgba(58,130,246,0.4); }
+  .header-btn:hover { background: rgba(255,255,255,0.1); color: #ccc; }
+
+  .tree-scroll {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+  }
+  .tree-scroll::-webkit-scrollbar { width: 6px; }
+  .tree-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+  /* Tree rows */
+  .node-row {
+    display: flex; align-items: center; height: 22px;
+    cursor: pointer; user-select: none; white-space: nowrap;
+    position: relative;
+  }
+  .node-row:hover { background: #2a2d2e; }
+  .node-row.selected { background: #094771; }
+
+  .row-indent { flex-shrink: 0; }
 
   .chevron {
-    width: 14px; height: 14px;
-    display: inline-flex; align-items: center; justify-content: center;
-    color: rgba(255,255,255,0.4);
-    font-size: 8px;
-    flex-shrink: 0;
+    width: 16px; height: 16px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: #c5c5c5;
     transition: transform 0.15s ease;
   }
+  .chevron svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   .chevron.open { transform: rotate(90deg); }
   .chevron.leaf { opacity: 0; pointer-events: none; }
 
-  .node-icon { font-size: 14px; flex-shrink: 0; }
+  .file-icon {
+    width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-right: 4px; font-size: 13px; line-height: 1;
+  }
 
   .node-label {
-    font-size: 12.5px;
-    color: rgba(255,255,255,0.85);
-    line-height: 1.5;
-  }
-  .node-label.depth-0 { font-weight: 600; color: #fff; }
-
-  .node-desc {
-    margin-left: 8px;
-    font-size: 11px;
-    color: rgba(255,255,255,0.28);
-    font-style: italic;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .node-children {
-    overflow: hidden;
-    max-height: 0;
-    opacity: 0;
-    transition: max-height 0.25s ease, opacity 0.2s ease;
-  }
-  .node-children.open {
-    max-height: 2000px;
-    opacity: 1;
-    transition: max-height 0.35s ease, opacity 0.25s ease;
-  }
-
-  .path-bar {
-    height: 26px;
-    background: #272727;
-    border-top: 1px solid #1a1a1a;
-    display: flex; align-items: center;
-    padding: 0 12px; gap: 4px;
-    color: rgba(255,255,255,0.4); font-size: 11px;
+    font-size: 13px; color: #cccccc;
     flex-shrink: 0;
   }
-  .path-crumb { color: rgba(255,255,255,0.55); }
-  .path-sep { color: rgba(255,255,255,0.25); margin: 0 2px; }
+  .node-label.placeholder { color: #9d9d9d; font-style: italic; }
+
+  .node-desc {
+    font-size: 11px; color: #4d9a5e;
+    margin-left: 8px; margin-right: 8px;
+    overflow: hidden; text-overflow: ellipsis;
+    font-style: italic; opacity: 0.9; flex-shrink: 1;
+  }
+
+  /* Animated children */
+  .node-children {
+    overflow: hidden; max-height: 0; opacity: 0;
+    transition: max-height 0.22s ease, opacity 0.18s ease;
+  }
+  .node-children.open {
+    max-height: 3000px; opacity: 1;
+    transition: max-height 0.32s ease, opacity 0.22s ease;
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 22px; background: #007acc;
+    display: flex; align-items: center; padding: 0 10px; gap: 14px; flex-shrink: 0;
+  }
+  .status-item { font-size: 11px; color: rgba(255,255,255,0.88); display: flex; align-items: center; gap: 3px; }
 </style>
 </head>
 <body>
-<div class="finder-window">
+<div class="vscode-window">
+
   <div class="title-bar">
-    <div class="traffic-light tl-close"></div>
-    <div class="traffic-light tl-min"></div>
-    <div class="traffic-light tl-max"></div>
-    <div class="title-text">monorepo</div>
+    <div class="win-btn win-close"></div>
+    <div class="win-btn win-min"></div>
+    <div class="win-btn win-max"></div>
+    <div class="title-bar-text">monorepo — Visual Studio Code</div>
   </div>
-  <div class="toolbar">
-    <div class="toolbar-btn">&#9664;</div>
-    <div class="toolbar-btn">&#9654;</div>
-    <div class="toolbar-btn" id="btn-expand" style="margin-left:12px;">Expand All</div>
-    <div class="toolbar-btn" id="btn-collapse">Collapse All</div>
-  </div>
-  <div class="finder-body">
+
+  <div class="layout">
+
+    <!-- Sidebar -->
     <div class="sidebar">
-      <div class="sidebar-section-label">Favorites</div>
-      <div class="sidebar-item active"><span class="sidebar-icon">&#128187;</span> monorepo</div>
-      <div class="sidebar-item"><span class="sidebar-icon">&#128193;</span> apps</div>
-      <div class="sidebar-item"><span class="sidebar-icon">&#128193;</span> libs</div>
-      <div class="sidebar-section-label" style="margin-top:8px;">Root Files</div>
-      <div class="sidebar-item"><span class="sidebar-icon">&#128196;</span> nx.json</div>
-      <div class="sidebar-item"><span class="sidebar-icon">&#128196;</span> package.json</div>
+      <div class="sidebar-title">Explorer</div>
+      <div class="explorer-header">
+        <span class="explorer-header-label">Monorepo</span>
+        <div class="explorer-header-actions">
+          <div class="header-btn" id="btn-collapse" title="Collapse All">⊟</div>
+          <div class="header-btn" id="btn-expand" title="Expand All">⊞</div>
+        </div>
+      </div>
+      <div class="tree-scroll" id="tree-root"></div>
     </div>
-    <div class="content" id="tree-root"></div>
+
   </div>
-  <div class="path-bar" id="path-bar">
-    <span class="path-crumb">monorepo</span>
+
+  <div class="status-bar">
+    <div class="status-item">⎇&nbsp; main</div>
+    <div class="status-item">✓ 0 errors, 0 warnings</div>
+    <div class="status-item" style="margin-left:auto;">NX Workspace</div>
+    <div class="status-item">TypeScript</div>
+    <div class="status-item">UTF-8</div>
   </div>
+
 </div>
 
 <script>
+const CHEVRON = `<svg viewBox="0 0 10 10"><polyline points="3,2 7,5 3,8"/></svg>`;
+
+const ICON = {
+  folder:    '📁',
+  folderO:   '📂',
+  devops:    '🔧',
+  contract:  '📋',
+  kafka:     '⚡',
+  pg:        '🐘',
+  infra:     '🏗️',
+  shared:    '📦',
+  domain:    '🗂️',
+  guard:     '🛡️',
+  json:      '{ }',
+  test:      '🧪',
+};
+
 const tree = [
-  { label: 'apps', icon: '&#128193;', desc: 'deployable NestJS application services', open: true, children: [
-    { label: '{application-name}', icon: '&#128193;', desc: 'one isolated folder per microservice', open: true, children: [
-      { label: '.devops', icon: '&#128296;', desc: 'Helm charts, pipelines, k8s manifests', open: false, children: [] },
-      { label: 'src', icon: '&#128193;', desc: 'all application TypeScript source code', open: true, children: [
-        { label: 'contract', icon: '&#128193;', desc: 'public API and messaging type definitions', open: true, children: [
-          { label: 'api-request', icon: '&#128193;', desc: 'inbound HTTP request DTO schemas', open: false, children: [] },
-          { label: 'api-response', icon: '&#128193;', desc: 'outbound HTTP response DTO schemas', open: false, children: [] },
-          { label: 'kafka-events', icon: '&#9889;', desc: 'Kafka event payload TypeScript types', open: false, children: [] },
-          { label: 'kafka-schema', icon: '&#9889;', desc: 'Avro schema files for Kafka topics', open: false, children: [] },
-          { label: 'postgres-models', icon: '&#128024;', desc: 'Prisma or TypeORM entity definitions', open: false, children: [] },
+  { label:'apps', icon:'folder', desc:'deployable NestJS application services', open:true, children:[
+    { label:'{application-name}', icon:'folder', desc:'one isolated folder per microservice', open:true, children:[
+      { label:'.devops',  icon:'devops',   desc:'Helm charts, pipelines, k8s manifests',        open:false, children:[] },
+      { label:'src',      icon:'folder',   desc:'all application TypeScript source code',        open:true,  children:[
+        { label:'contract', icon:'contract', desc:'public API and messaging type definitions', open:true, children:[
+          { label:'api-request',     icon:'folder',   desc:'inbound HTTP request DTO schemas',      open:false, children:[] },
+          { label:'api-response',    icon:'folder',   desc:'outbound HTTP response DTO schemas',    open:false, children:[] },
+          { label:'kafka-events',    icon:'kafka',    desc:'Kafka event payload TypeScript types',  open:false, children:[] },
+          { label:'kafka-schema',    icon:'kafka',    desc:'Avro schema files for Kafka topics',    open:false, children:[] },
+          { label:'postgres-models', icon:'pg',       desc:'Prisma or TypeORM entity definitions',  open:false, children:[] },
         ]},
-        { label: 'controllers', icon: '&#128193;', desc: 'route handlers, map HTTP to services', open: false, children: [] },
-        { label: 'services', icon: '&#128193;', desc: 'business logic and orchestration layer', open: false, children: [] },
-        { label: 'repositories', icon: '&#128193;', desc: 'data access layer, wraps data-access libs', open: false, children: [] },
-        { label: 'guards', icon: '&#128737;', desc: 'auth and permission checks per route', open: false, children: [] },
-        { label: 'interceptors', icon: '&#128193;', desc: 'transform requests and responses globally', open: false, children: [] },
-        { label: 'pipes', icon: '&#128193;', desc: 'validate and transform incoming payload data', open: false, children: [] },
-        { label: 'middlewares', icon: '&#128193;', desc: 'cross-cutting concerns before route handler', open: false, children: [] },
+        { label:'controllers',  icon:'folder', desc:'route handlers, map HTTP to services',        open:false, children:[] },
+        { label:'services',     icon:'folder', desc:'business logic and orchestration layer',      open:false, children:[] },
+        { label:'repositories', icon:'folder', desc:'data access layer, wraps data-access libs',  open:false, children:[] },
+        { label:'guards',       icon:'guard',  desc:'auth and permission checks per route',        open:false, children:[] },
+        { label:'interceptors', icon:'folder', desc:'transform requests and responses globally',   open:false, children:[] },
+        { label:'pipes',        icon:'folder', desc:'validate and transform incoming payload data',open:false, children:[] },
+        { label:'middlewares',  icon:'folder', desc:'cross-cutting concerns before route handler', open:false, children:[] },
       ]},
     ]},
   ]},
-  { label: 'libs', icon: '&#128193;', desc: 'all shared and domain-scoped reusable libraries', open: true, children: [
-    { label: '{domain-name}', icon: '&#128193;', desc: 'libraries scoped to one business domain', open: true, children: [
-      { label: '{team-name}', icon: '&#128193;', desc: 'libraries scoped to one team name domain', open: true, children: [
-        { label: '{application-name}', icon: '&#128193;', desc: '', open: false, children: [] },
-        { label: 'shared-logic', icon: '&#128193;', desc: 'used only by owning team', open: false, children: [] },
-        { label: 'contract', icon: '&#128193;', desc: 'used only by owning team', open: false, children: [] },
+
+  { label:'libs', icon:'shared', desc:'all shared and domain-scoped reusable libraries', open:true, children:[
+    { label:'{domain-name}', icon:'domain', desc:'libraries scoped to one business domain', open:true, children:[
+      { label:'{team-name}', icon:'folder', desc:'libraries scoped to one team', open:true, children:[
+        { label:'{application-name}', icon:'folder',   desc:'',                          open:false, children:[] },
+        { label:'shared-logic',       icon:'folder',   desc:'used only by owning team',  open:false, children:[] },
+        { label:'contract',           icon:'contract', desc:'used only by owning team',  open:false, children:[] },
       ]},
     ]},
-    { label: 'shared', icon: '&#128193;', desc: 'libraries available to every application (owned by infra team)', open: true, children: [
-      { label: 'infrastructure', icon: '&#127959;', desc: 'logging, OTel, health, framework wrappers', open: false, children: [] },
+    { label:'shared', icon:'shared', desc:'libraries available to every application (infra team)', open:true, children:[
+      { label:'infrastructure', icon:'infra', desc:'logging, OTel, health, framework wrappers', open:false, children:[] },
     ]},
   ]},
-  { label: 'package.json', icon: '&#9881;', desc: 'npm dependencies for the entire monorepo', isFile: true },
-  { label: 'nx.json', icon: '&#9881;', desc: 'NX build targets, caching and graph config', isFile: true },
+
+  { label:'package.json', icon:'json', desc:'npm dependencies for the entire monorepo', isFile:true },
+  { label:'nx.json',      icon:'json', desc:'NX build targets, caching and graph config',  isFile:true },
 ];
 
-let selectedRow = null;
-
-function buildPath(node) {
-  // Simple path display - just show selected label
-  return node.label;
-}
+let selected = null;
 
 function renderNode(node, depth) {
-  const el = document.createElement('div');
-  el.className = 'node';
+  const wrap = document.createElement('div');
+  wrap.className = 'node';
+
+  const hasChildren = !node.isFile && Array.isArray(node.children) && node.children.length > 0;
 
   const row = document.createElement('div');
   row.className = 'node-row';
-  row.style.paddingLeft = (6 + depth * 18) + 'px';
 
-  // Chevron
+  // indent
+  const ind = document.createElement('span');
+  ind.className = 'row-indent';
+  ind.style.width = (8 + depth * 16) + 'px';
+
+  // chevron
   const chev = document.createElement('span');
-  const isFolder = !node.isFile && node.children && node.children.length >= 0;
-  const hasChildren = !node.isFile && node.children && node.children.length > 0;
   chev.className = 'chevron' + (!hasChildren ? ' leaf' : node.open ? ' open' : '');
-  chev.innerHTML = '&#9654;';
+  chev.innerHTML = CHEVRON;
 
-  // Icon
+  // icon
   const ico = document.createElement('span');
-  ico.className = 'node-icon';
-  ico.innerHTML = node.icon;
+  ico.className = 'file-icon';
+  const iconKey = node.icon || 'folder';
+  ico.textContent = (node.open && iconKey === 'folder') ? ICON.folderO : (ICON[iconKey] || '📄');
 
-  // Label
+  // label
   const lbl = document.createElement('span');
-  lbl.className = 'node-label' + (depth === 0 ? ' depth-0' : '');
+  lbl.className = 'node-label' + (node.label.startsWith('{') ? ' placeholder' : '');
   lbl.textContent = node.label;
 
-  // Description
+  // description (comment style)
   const desc = document.createElement('span');
   desc.className = 'node-desc';
-  desc.textContent = node.desc ? '— ' + node.desc : '';
+  desc.textContent = node.desc ? '// ' + node.desc : '';
 
+  row.appendChild(ind);
   row.appendChild(chev);
   row.appendChild(ico);
   row.appendChild(lbl);
   row.appendChild(desc);
-  el.appendChild(row);
+  wrap.appendChild(row);
 
-  // Children container
-  let childrenEl = null;
+  let childWrap = null;
   if (hasChildren) {
-    childrenEl = document.createElement('div');
-    childrenEl.className = 'node-children' + (node.open ? ' open' : '');
-    node.children.forEach(child => {
-      childrenEl.appendChild(renderNode(child, depth + 1));
-    });
-    el.appendChild(childrenEl);
+    childWrap = document.createElement('div');
+    childWrap.className = 'node-children' + (node.open ? ' open' : '');
+    node.children.forEach(c => childWrap.appendChild(renderNode(c, depth + 1)));
+    wrap.appendChild(childWrap);
   }
 
-  // Click: toggle open/close for folders, select for files
-  row.addEventListener('click', (e) => {
-    // Deselect previous
-    if (selectedRow) selectedRow.classList.remove('selected');
+  row.addEventListener('click', () => {
+    if (selected) selected.classList.remove('selected');
     row.classList.add('selected');
-    selectedRow = row;
-
-    // Update path bar
-    document.getElementById('path-bar').innerHTML =
-      '<span class="path-crumb">monorepo</span>' +
-      (depth > 0 ? '<span class="path-sep">›</span><span class="path-crumb">' + node.label + '</span>' : '<span class="path-sep">›</span><span class="path-crumb">' + node.label + '</span>');
+    selected = row;
 
     if (hasChildren) {
       node.open = !node.open;
       chev.className = 'chevron' + (node.open ? ' open' : '');
-      childrenEl.className = 'node-children' + (node.open ? ' open' : '');
+      childWrap.className = 'node-children' + (node.open ? ' open' : '');
+      ico.textContent = (node.open && iconKey === 'folder') ? ICON.folderO : (ICON[iconKey] || '📁');
     }
   });
 
-  return el;
+  return wrap;
 }
 
 function renderTree() {
   const root = document.getElementById('tree-root');
   root.innerHTML = '';
-  tree.forEach(node => root.appendChild(renderNode(node, 0)));
+  tree.forEach(n => root.appendChild(renderNode(n, 0)));
 }
 
-function setAllOpen(state) {
-  function recurse(nodes) {
-    nodes.forEach(n => {
-      if (!n.isFile && n.children) {
-        n.open = state;
-        recurse(n.children);
-      }
-    });
-  }
-  recurse(tree);
-  // Animate existing DOM nodes instead of re-rendering
-  document.querySelectorAll('.node-children').forEach(el => {
-    el.classList.toggle('open', state);
-  });
-  document.querySelectorAll('.chevron:not(.leaf)').forEach(el => {
-    el.classList.toggle('open', state);
-  });
+function setAll(state) {
+  (function recurse(nodes) {
+    nodes.forEach(n => { if (!n.isFile && n.children) { n.open = state; recurse(n.children); } });
+  })(tree);
+  document.querySelectorAll('.node-children').forEach(el => el.classList.toggle('open', state));
+  document.querySelectorAll('.chevron:not(.leaf)').forEach(el => el.classList.toggle('open', state));
 }
 
-document.getElementById('btn-expand').addEventListener('click', () => setAllOpen(true));
-document.getElementById('btn-collapse').addEventListener('click', () => setAllOpen(false));
+document.getElementById('btn-expand').addEventListener('click', () => setAll(true));
+document.getElementById('btn-collapse').addEventListener('click', () => setAll(false));
 
 renderTree();
 </script>
