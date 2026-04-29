@@ -208,6 +208,7 @@ const tree = [
   { label:'apps', icon:'folder', desc:'deployable NestJS application services', open:true, children:[
     { label:'{application-name}', icon:'folder', desc:'one isolated folder per microservice', open:true, children:[
       { label:'.devops',  icon:'devops',   desc:'Helm charts, pipelines, k8s manifests',        open:false, children:[] },
+      { label:'docs',     icon:'folder',   desc:'service-level documentation and diagrams',      open:false, children:[] },
       { label:'src',      icon:'folder',   desc:'all application TypeScript source code',        open:true,  children:[
         { label:'contract', icon:'contract', desc:'public API and messaging type definitions', open:true, children:[
           { label:'api-request',     icon:'folder',   desc:'inbound HTTP request DTO schemas',      open:false, children:[] },
@@ -240,6 +241,7 @@ const tree = [
     ]},
   ]},
 
+  { label:'skills', icon:'folder', desc:'NX generators, schematics and custom tooling', open:false, children:[] },
   { label:'package.json', icon:'json', desc:'npm dependencies for the entire monorepo', isFile:true },
   { label:'nx.json',      icon:'json', desc:'NX build targets, caching and graph config',  isFile:true },
 ];
